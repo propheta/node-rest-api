@@ -7,27 +7,33 @@ router.get("/", (req, res, next) => {
     if (error) {
       return res.status(500).send({ error: error });
     }
-    conn.query("SELECT * FROM Orders", (error, result, fields) => {
-      if (error) {
-        return res.status(500).send({ error: error });
+    conn.query(
+      "SELECT Orders.OrderID, Orders.OrderQuantity, Products.ProductID, Products.ProductName, Products.ProductPrice FROM Orders INNER JOIN Products ON Products.ProductID = Orders.ProductID",
+      (error, result, fields) => {
+        if (error) {
+          return res.status(500).send({ error: error });
+        }
+        const response = {
+          orders: result.map((order) => {
+            return {
+              OrderId: order.OrderID,
+              Quantity: order.OrderQuantity,
+              Product: {
+                ProductId: order.ProductID,
+                Name: order.ProductName,
+                Price: order.ProductPrice,
+              },
+              request: {
+                type: "GET",
+                description: "Gets a specific order",
+                url: "http://localhost:5000/orders/" + order.OrderID,
+              },
+            };
+          }),
+        };
+        return res.status(200).send({ response });
       }
-      const response = {
-        quantity: result.length,
-        orders: result.map((order) => {
-          return {
-            OrderId: order.OrderID,
-            ProductId: order.ProductID,
-            Quantity: order.OrderQuantity,
-            request: {
-              type: "GET",
-              description: "Gets a specific order",
-              url: "http://localhost:5000/orders/" + order.OrderID,
-            },
-          };
-        }),
-      };
-      return res.status(200).send({ response });
-    });
+    );
   });
 });
 
